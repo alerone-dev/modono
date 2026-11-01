@@ -1,0 +1,64 @@
+.form {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 2px solid #3a3a3f;
+  border-radius: 2px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.input::placeholder {
+  color: #8a8a93;
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: #fff;
+}
+
+.button {
+  padding: 0.85rem 1.25rem;
+  border: 0;
+  border-radius: 2px;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.message {
+  min-height: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #a5a5ae;
+}
+
+.message[data-status="error"] {
+  color: #ff8a8a;
+}
+
+@media (max-width: 420px) {
+  .row {
+    flex-direction: column;
+  }
+}
