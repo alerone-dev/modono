@@ -5,7 +5,6 @@
 
 .row {
   display: flex;
-  gap: 0.5rem;
 }
 
 .input {
@@ -13,11 +12,28 @@
   min-width: 0;
   padding: 0.85rem 1rem;
   border: 2px solid #3a3a3f;
-  border-radius: 2px;
+  border-right-width: 0;
+  border-radius: 0;
   background: transparent;
   color: #fff;
   font: inherit;
   font-size: 1rem;
+}
+
+/* Keep the field transparent when the browser autofills a saved email */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus,
+.input:-webkit-autofill:active {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  box-shadow: 0 0 0 1000px #000 inset;
+  transition: background-color 600000s 0s, color 600000s 0s;
+}
+
+.input:autofill {
+  background: transparent;
+  color: #fff;
 }
 
 .input::placeholder {
@@ -26,13 +42,14 @@
 
 .input:focus-visible {
   outline: none;
-  border-color: #fff;
 }
 
 .button {
+  min-width: 8.5rem;
   padding: 0.85rem 1.25rem;
-  border: 0;
-  border-radius: 2px;
+  border: 2px solid #fff;
+  border-left-width: 0;
+  border-radius: 0;
   background: #fff;
   color: #000;
   font: inherit;
@@ -41,9 +58,76 @@
   cursor: pointer;
 }
 
+.button {
+  position: relative;
+}
+
 .button:disabled {
-  opacity: 0.6;
   cursor: progress;
+}
+
+.button[data-loading="true"] .label {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s ease-in-out,
+    text-decoration-color 0.2s ease-in-out;
+}
+
+.link:hover,
+.consent a:hover {
+  color: #fff;
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
+}
+
+.consent {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+  margin-top: 0.75rem;
+  color: #8a8a93;
+  font-size: 0.8rem;
 }
 
 .message {
@@ -53,6 +137,11 @@
   color: #a5a5ae;
 }
 
+.message[data-status="success"],
+.message[data-status="exists"] {
+  color: #4ade80;
+}
+
 .message[data-status="error"] {
   color: #ff8a8a;
 }
@@ -60,5 +149,14 @@
 @media (max-width: 420px) {
   .row {
     flex-direction: column;
+  }
+
+  .input {
+    border-right-width: 2px;
+    border-bottom-width: 0;
+  }
+
+  .button {
+    border-left-width: 2px;
   }
 }
