@@ -1,16 +1,10 @@
 .main {
-  min-height: 100dvh;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 3rem;
-  padding: 3rem 1.25rem 1.5rem;
+  padding: 3rem 1.25rem 2rem;
   text-align: center;
-  background:
-    radial-gradient(ellipse at 100% 0%, #1c1c20 0%, transparent 45%),
-    radial-gradient(ellipse at 0% 100%, #17171a 0%, transparent 45%),
-    #000;
 }
 
 .hero {
@@ -72,8 +66,9 @@
   display: flex;
   padding: 0.6rem;
   color: #fff;
+  text-decoration: none;
   opacity: 0.85;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .socials a:hover {
@@ -94,22 +89,10 @@
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .socials a:hover::after,
 .socials a:focus-visible::after {
   opacity: 1;
-}
-
-.footer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  color: #6f6f78;
-  font-size: 0.8rem;
-}
-
-.footer a {
-  color: #a5a5ae;
 }

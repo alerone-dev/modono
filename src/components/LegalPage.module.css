@@ -1,0 +1,67 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.home {
+  display: block;
+  width: 8rem;
+}
+
+.home img {
+  width: 100%;
+  height: auto;
+}
+
+.article {
+  width: 100%;
+  max-width: 44rem;
+  color: #d4d4da;
+}
+
+.title {
+  color: #fff;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.updated {
+  margin-top: 0.75rem;
+  color: #8a8a93;
+  font-size: 0.9rem;
+}
+
+.intro {
+  margin-top: 2rem;
+}
+
+.section {
+  margin-top: 2.5rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.section h2 {
+  margin-bottom: 0.75rem;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.section p + p,
+.section ul + p,
+.section p + ul {
+  margin-top: 0.75rem;
+}
+
+.section ul {
+  padding-left: 1.25rem;
+}
+
+.section li + li {
+  margin-top: 0.4rem;
+}

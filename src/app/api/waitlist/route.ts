@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import nodemailer from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
 import { ADMIN_NOTIFICATION_EMAIL, CONFIRMATION_EMAIL } from "@/lib/emails";
 import { CONTACT_EMAIL } from "@/lib/constants";
-
-const waitlistSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
-});
+import { dbConfigured, saveWaitlistEmail } from "@/lib/db";
+import { waitlistSchema } from "@/lib/validation";
 
 const REQUIRED_ENV = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"] as const;
 
@@ -14,27 +11,27 @@ function missingEnv() {
   return REQUIRED_ENV.filter((key) => !process.env[key]?.trim());
 }
 
-// Maps nodemailer errors to a log hint and a safe message for the visitor
+// Maps nodemailer errors to a log hint
 function describeError(err: unknown) {
   const code = (err as { code?: string })?.code;
   switch (code) {
     case "EAUTH":
-      return { hint: "SMTP login rejected. Check SMTP_USER and SMTP_PASS (use a Google app password).", status: 502 };
+      return "SMTP login rejected. Check SMTP_USER and SMTP_PASS (use a Google app password).";
     case "ECONNECTION":
     case "ETIMEDOUT":
     case "ESOCKET":
     case "EDNS":
-      return { hint: "Could not reach the SMTP server. Check SMTP_HOST and SMTP_PORT.", status: 502 };
+      return "Could not reach the SMTP server. Check SMTP_HOST and SMTP_PORT.";
     case "EENVELOPE":
-      return { hint: "SMTP rejected the recipient address.", status: 400 };
+      return "SMTP rejected the recipient address.";
     default:
-      return { hint: "Unexpected mail error.", status: 500 };
+      return "Unexpected mail error.";
   }
 }
 
-async function sendEmails(email: string) {
+function createTransporter() {
   const port = Number(process.env.SMTP_PORT);
-  const transporter = nodemailer.createTransport({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port,
     secure: port === 465,
@@ -42,18 +39,22 @@ async function sendEmails(email: string) {
     connectionTimeout: 10_000,
     socketTimeout: 15_000,
   });
+}
 
-  // Notify info@modono.in
-  await transporter.sendMail({
+// Notify info@modono.in
+function sendAdminNotification(transporter: Transporter, email: string) {
+  return transporter.sendMail({
     from: `"Modono Waitlist" <${process.env.SMTP_USER}>`,
     to: CONTACT_EMAIL,
     replyTo: email,
     subject: ADMIN_NOTIFICATION_EMAIL.subject(email),
     html: ADMIN_NOTIFICATION_EMAIL.html(email),
   });
+}
 
-  // Acknowledge the subscriber
-  await transporter.sendMail({
+// Acknowledge the subscriber
+function sendConfirmation(transporter: Transporter, email: string) {
+  return transporter.sendMail({
     from: `"Modono" <${process.env.SMTP_USER}>`,
     to: email,
     subject: CONFIRMATION_EMAIL.subject,
@@ -70,30 +71,62 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  const email = parsed.data.email;
 
+  const useDb = dbConfigured();
   const missing = missingEnv();
+  if (!useDb) console.error("Waitlist: DATABASE_URL is not set, signups are not being saved");
   if (missing.length > 0) {
     console.error(`Waitlist: missing environment variables: ${missing.join(", ")}`);
+  }
+  if (!useDb && missing.length > 0) {
     return NextResponse.json(
       { error: "Signups are temporarily unavailable. Please email info@modono.in." },
       { status: 503 },
     );
   }
 
-  try {
-    await sendEmails(parsed.data.email);
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err) {
-    const { hint, status } = describeError(err);
-    console.error(`Waitlist error: ${hint}`, err);
+  // The signup counts as received once it is saved or the team has been notified
+  let received = false;
+  let isNew = true;
+
+  if (useDb) {
+    try {
+      isNew = await saveWaitlistEmail(email);
+      received = true;
+    } catch (err) {
+      console.error("Waitlist: could not save to the database", err);
+    }
+  }
+
+  // Already on the list: skip the emails so repeat signups don't send duplicates
+  if (received && !isNew) {
     return NextResponse.json(
-      {
-        error:
-          status === 400
-            ? "We couldn't send a confirmation to that email address."
-            : "Something went wrong. Please try again or email info@modono.in.",
-      },
-      { status: status === 400 ? 400 : 500 },
+      { error: "This email is already subscribed.", code: "already_subscribed" },
+      { status: 409 },
     );
   }
+
+  if (missing.length === 0) {
+    const transporter = createTransporter();
+    try {
+      await sendAdminNotification(transporter, email);
+      received = true;
+    } catch (err) {
+      console.error(`Waitlist: admin notification failed. ${describeError(err)}`, err);
+    }
+    try {
+      await sendConfirmation(transporter, email);
+    } catch (err) {
+      console.error(`Waitlist: confirmation email failed. ${describeError(err)}`, err);
+    }
+  }
+
+  if (!received) {
+    return NextResponse.json(
+      { error: "Something went wrong. Please try again or email info@modono.in." },
+      { status: 500 },
+    );
+  }
+  return NextResponse.json({ success: true }, { status: 200 });
 }
